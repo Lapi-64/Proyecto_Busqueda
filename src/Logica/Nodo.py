@@ -10,7 +10,14 @@ class Nodo:
         self.es_meta = False
         self.es_obstaculo = False
         self.en_camino = False
+        self.posible = False
         
+    def __eq__(self, other):
+        return isinstance(other, Nodo) and self.x == other.x and self.y == other.y
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
     def get_posicion_pixel(self, offset_x=0, offset_y=0):
         return (self.x * self.tamaño + offset_x, self.y * self.tamaño + offset_y)
     
@@ -26,6 +33,7 @@ class Nodo:
     def reset(self):
         self.visitado = False
         self.en_camino = False
+        self.posible = False
         if not self.es_inicio and not self.es_meta and not self.es_obstaculo:
             pass
     

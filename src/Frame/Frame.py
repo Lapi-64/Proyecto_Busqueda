@@ -1,6 +1,9 @@
 import pygame
 import sys
+from tkinter import messagebox
 from Logica.Nodo import Nodo
+
+from Algoritmos_Busqueda.A_Star import a_star
 
 ANCHO_VENTANA = 1000
 ALTO_VENTANA = 700
@@ -13,14 +16,15 @@ OFFSET_Y = 10
 COLOR_FONDO = (240, 240, 240)
 COLOR_LINEA = (200, 200, 200)
 COLOR_CELDA = (255, 255, 255)
-COLOR_VISITADO = (173, 216, 230)
-COLOR_CAMINO = (0, 255, 0)
+COLOR_POSIBLE = (0, 255, 0)
+COLOR_VISITADO = (255, 0, 0)
+COLOR_CAMINO = (255, 255, 0)
 COLOR_INICIO = (0, 0, 255)
-COLOR_META = (255, 0, 0)
+COLOR_META = (128, 0, 128)
 COLOR_OBSTACULO = (0, 0, 0)
 COLOR_TEXTO = (50, 50, 50)
 COLOR_BOTON = (200, 200, 200)
-COLOR_BOTON_HOVER = (180, 180, 180)
+COLOR_BOTON_SELECCION = (180, 180, 180)
 
 
 class GestorGrid:
@@ -29,12 +33,11 @@ class GestorGrid:
         self.filas = filas
         self.tamaño_celda = tamaño_celda
         self.nodos = [[Nodo(x, y, tamaño_celda) for x in range(colum)] for y in range(filas)]
-        self.modo_actual = "normal"  # normal, inicio, meta, obstaculo
+        self.modo_actual = "normal"
         self.inicio = None
         self.meta = None
         
     def obtener_nodo_en_punto(self, px, py):
-        """Obtiene el nodo en una posición de píxeles"""
         px_relativo = px - OFFSET_X
         py_relativo = py - OFFSET_Y
         
@@ -49,14 +52,14 @@ class GestorGrid:
         return None
     
     def set_modo(self, modo):
-        """Cambia el modo actual"""
         self.modo_actual = modo
     
     def procesar_clic(self, px, py):
-        """Procesa un clic del ratón"""
         nodo = self.obtener_nodo_en_punto(px, py)
         if not nodo:
             return
+
+        nodo.en_camino = False
         
         if self.modo_actual == "inicio":
             if self.inicio:
@@ -75,13 +78,12 @@ class GestorGrid:
                 nodo.es_obstaculo = not nodo.es_obstaculo
     
     def resetear(self):
-        """Resetea el grid"""
         for fila in self.nodos:
             for nodo in fila:
                 nodo.reset()
     
     def resetear_todo(self):
-        """Resetea el grid completamente"""
+    
         self.inicio = None
         self.meta = None
         for fila in self.nodos:
@@ -91,12 +93,13 @@ class GestorGrid:
                 nodo.es_meta = False
                 nodo.es_obstaculo = False
                 nodo.en_camino = False
+                nodo.posible = False
 
 
 class InterfazGrid:
-    """Interfaz gráfica del grid"""
     
     def __init__(self, ancho, alto):
+ 
         self.pantalla = pygame.display.set_mode((ancho, alto))
         pygame.display.set_caption("Editor de Grid - Búsqueda IA")
         self.reloj = pygame.time.Clock()
@@ -105,10 +108,12 @@ class InterfazGrid:
         
         self.gestor = GestorGrid(CANTIDAD_COLUMNAS, CANTIDAD_FILAS, TAMAÑO_CELDA)
         self.botones = self._crear_botones()
+        self.alert_msg = None
+        self.alert_timer = 0
         self.ejecutando = True
     
     def _crear_botones(self):
-        """Crea los botones de la interfaz"""
+
         botones = {}
         x_inicio = ANCHO_VENTANA - 180
         y_inicio = 20
@@ -175,17 +180,17 @@ class InterfazGrid:
         return botones
     
     def ejecutar_algoritmo(self, algoritmo):
-        """Ejecuta el algoritmo especificado"""
         if not self.gestor.inicio or not self.gestor.meta:
             print("Error: Debes establecer un punto de inicio y un punto meta")
             return
         
-        # Resetear el estado de búsqueda
         self.gestor.resetear()
         
-        # Aquí se ejecutaría el algoritmo seleccionado
         if algoritmo == "a_star":
             print("Ejecutando A*")
+            encontrado = a_star(self.gestor, delay=0.05, draw_func=self.dibujar)
+            if not encontrado:
+                messagebox.showerror("A* - Sin Ruta", "No se encontró una ruta válida entre el inicio y la meta.")
         elif algoritmo == "bfs":
             print("Ejecutando BFS")
         elif algoritmo == "dfs":
@@ -194,22 +199,19 @@ class InterfazGrid:
             print("Ejecutando Dijkstra")
     
     def procesar_eventos(self):
-        """Procesa los eventos de la ventana"""
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 self.ejecutando = False
             
             elif evento.type == pygame.MOUSEBUTTONDOWN:
-                if evento.button == 1:  # Clic izquierdo
+                if evento.button == 1: 
                     x, y = evento.pos
-                    # Verificar si se hizo clic en algún botón
                     botón_clickeado = False
                     for nombre, boton in self.botones.items():
                         if boton["rect"].collidepoint(x, y):
                             boton["accion"]()
                             botón_clickeado = True
                     
-                    # Si no se clickeó un botón, procesar clic en el grid
                     if not botón_clickeado:
                         self.gestor.procesar_clic(x, y)
             
@@ -218,13 +220,10 @@ class InterfazGrid:
                     self.ejecutando = False
     
     def dibujar_grid(self):
-        """Dibuja el grid en la pantalla"""
-        # Dibujar celdas
         for fila in self.gestor.nodos:
             for nodo in fila:
                 rect = nodo.get_rect(OFFSET_X, OFFSET_Y)
                 
-                # Determinar color según el estado
                 if nodo.es_inicio:
                     color = COLOR_INICIO
                 elif nodo.es_meta:
@@ -233,6 +232,8 @@ class InterfazGrid:
                     color = COLOR_OBSTACULO
                 elif nodo.en_camino:
                     color = COLOR_CAMINO
+                elif nodo.posible:
+                    color = COLOR_POSIBLE
                 elif nodo.visitado:
                     color = COLOR_VISITADO
                 else:
@@ -242,24 +243,20 @@ class InterfazGrid:
                 pygame.draw.rect(self.pantalla, COLOR_LINEA, rect, 1)
     
     def dibujar_botones(self):
-        """Dibuja los botones de la interfaz"""
         for nombre, boton in self.botones.items():
-            # Cambiar color si el modo actual coincide (solo para botones de modo)
             if nombre in ["inicio", "meta", "obstaculo"] and nombre == self.gestor.modo_actual:
-                color = COLOR_BOTON_HOVER
+                color = COLOR_BOTON_SELECCION
             else:
                 color = COLOR_BOTON
             
             pygame.draw.rect(self.pantalla, color, boton["rect"])
             pygame.draw.rect(self.pantalla, COLOR_LINEA, boton["rect"], 2)
             
-            # Dibujar texto
             texto_superficie = self.fuente_pequeña.render(boton["texto"], True, COLOR_TEXTO)
             texto_rect = texto_superficie.get_rect(center=boton["rect"].center)
             self.pantalla.blit(texto_superficie, texto_rect)
     
     def dibujar_info(self):
-        """Dibuja información en la pantalla"""
         texto = f"Modo: {self.gestor.modo_actual.upper()}"
         superficie_texto = self.fuente.render(texto, True, COLOR_TEXTO)
         self.pantalla.blit(superficie_texto, (OFFSET_X, ANCHO_VENTANA - 180 + 220))
@@ -269,19 +266,23 @@ class InterfazGrid:
         self.pantalla.blit(superficie_info, (OFFSET_X, ANCHO_VENTANA - 180 + 250))
     
     def dibujar(self):
-        """Dibuja toda la interfaz"""
         self.pantalla.fill(COLOR_FONDO)
         self.dibujar_grid()
         self.dibujar_botones()
         self.dibujar_info()
+        if self.alert_msg and self.alert_timer > 0:
+            self._dibujar_alerta(self.alert_msg)
         pygame.display.flip()
     
     def ejecutar(self):
-        """Ejecuta el loop principal"""
         while self.ejecutando:
             self.procesar_eventos()
+            if self.alert_timer > 0:
+                self.alert_timer -= 1
+                if self.alert_timer == 0:
+                    self.alert_msg = None
             self.dibujar()
-            self.reloj.tick(60)  # 60 FPS
+            self.reloj.tick(60)
         
         pygame.quit()
         sys.exit()
