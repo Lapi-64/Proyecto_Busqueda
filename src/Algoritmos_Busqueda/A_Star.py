@@ -18,10 +18,6 @@ def get_neighbors(gestor, nodo: Nodo):
 
 
 def reconstruct_path(came_from, current: Nodo):
-    """Marca el camino reconstruido y devuelve la longitud del mismo.
-
-    La longitud cuenta todas las celdas desde la meta hasta el inicio (ambas
-    incluidas)."""
     length = 1
     while current in came_from:
         current = came_from[current]
@@ -32,7 +28,6 @@ def reconstruct_path(came_from, current: Nodo):
 
 
 def a_star(gestor, delay=0.4, draw_func=None):
-    """Ejecuta A* y devuelve una tupla (longitud, tiempo) o False."""
     start = gestor.inicio
     goal = gestor.meta
     if start is None or goal is None:

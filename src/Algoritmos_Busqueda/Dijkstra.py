@@ -4,7 +4,6 @@ from Logica.Nodo import Nodo
 
 
 def get_neighbors(gestor, nodo: Nodo):
-    """Obtiene los nodos vecinos (arriba, abajo, izquierda, derecha)"""
     vecinos = []
     direcciones = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     for dx, dy in direcciones:
@@ -15,9 +14,7 @@ def get_neighbors(gestor, nodo: Nodo):
 
 
 def reconstruct_path(came_from, current: Nodo):
-    """Reconstruye el camino desde el inicio hasta la meta.
 
-    Retorna el número de celdas que componen el camino (inicio/ meta incluidos)."""
     length = 1
     while current in came_from:
         current = came_from[current]
@@ -28,7 +25,6 @@ def reconstruct_path(came_from, current: Nodo):
 
 
 def dijkstra(gestor, delay=0.4, draw_func=None):
-    """Dijkstra que devuelve (longitud, tiempo) o False si no hay ruta."""
     start = gestor.inicio
     goal = gestor.meta
     if start is None or goal is None:
@@ -71,7 +67,6 @@ def dijkstra(gestor, delay=0.4, draw_func=None):
             if vecino.es_obstaculo:
                 continue
             
-            # Costo: distancia actual + 1 (distancia entre nodos)
             tentative_g = g_score.get(current, float("inf")) + 1
 
             if tentative_g < g_score.get(vecino, float("inf")):

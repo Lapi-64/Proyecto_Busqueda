@@ -4,7 +4,6 @@ from Logica.Nodo import Nodo
 
 
 def get_neighbors(gestor, nodo: Nodo):
-    """Obtiene los nodos vecinos (4 direcciones: arriba, abajo, izquierda, derecha)"""
     vecinos = []
     direcciones = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     for dx, dy in direcciones:
@@ -15,9 +14,7 @@ def get_neighbors(gestor, nodo: Nodo):
 
 
 def reconstruct_path(came_from, current: Nodo):
-    """Reconstruye el camino desde el inicio hasta la meta marcando los nodos.
 
-    Devuelve la longitud total de la ruta (incluyendo inicio y meta)."""
     length = 1
     while current in came_from:
         current = came_from[current]
@@ -28,7 +25,6 @@ def reconstruct_path(came_from, current: Nodo):
 
 
 def bfs(gestor, delay=0.4, draw_func=None):
-    """BFS con medición de tiempo; retorna (longitud, tiempo) o False."""
     start = gestor.inicio
     goal = gestor.meta
     if start is None or goal is None:
