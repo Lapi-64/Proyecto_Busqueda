@@ -4,6 +4,9 @@ from tkinter import messagebox
 from Logica.Nodo import Nodo
 
 from Algoritmos_Busqueda.A_Star import a_star
+from Algoritmos_Busqueda.BFS import bfs
+from Algoritmos_Busqueda.DFS import dfs
+from Algoritmos_Busqueda.Dijkstra import dijkstra
 
 ANCHO_VENTANA = 1000
 ALTO_VENTANA = 700
@@ -82,7 +85,7 @@ class GestorGrid:
             for nodo in fila:
                 nodo.reset()
     
-    def resetear_todo(self):
+    def reiniciar(self):
     
         self.inicio = None
         self.meta = None
@@ -170,10 +173,10 @@ class InterfazGrid:
             "activo": False
         }
         
-        botones["resetear"] = {
+        botones["reiniciar"] = {
             "rect": pygame.Rect(x_inicio, y_inicio + 7*(alto_boton + espaciado), ancho_boton, alto_boton),
-            "texto": "Resetear Todo",
-            "accion": lambda: self.gestor.resetear_todo(),
+            "texto": "Reiniciar",
+            "accion": lambda: self.gestor.reiniciar(),
             "activo": False
         }
         
@@ -186,17 +189,30 @@ class InterfazGrid:
         
         self.gestor.resetear()
         
+        # resultado será False o (longitud, tiempo)
+        resultado = False
+        nombre = algoritmo.upper() if algoritmo != "a_star" else "A*"
+
         if algoritmo == "a_star":
             print("Ejecutando A*")
-            encontrado = a_star(self.gestor, delay=0.05, draw_func=self.dibujar)
-            if not encontrado:
-                messagebox.showerror("A* - Sin Ruta", "No se encontró una ruta válida entre el inicio y la meta.")
+            resultado = a_star(self.gestor, delay=0.1, draw_func=self.dibujar)
         elif algoritmo == "bfs":
             print("Ejecutando BFS")
+            resultado = bfs(self.gestor, delay=0.1, draw_func=self.dibujar)
         elif algoritmo == "dfs":
             print("Ejecutando DFS")
+            resultado = dfs(self.gestor, delay=0.1, draw_func=self.dibujar)
         elif algoritmo == "dijkstra":
             print("Ejecutando Dijkstra")
+            resultado = dijkstra(self.gestor, delay=0.1, draw_func=self.dibujar)
+
+        if resultado:
+            length, elapsed = resultado
+            mensaje = f"Ruta calculada: {length} celdas en {elapsed:.2f} s"
+            self._mostrar_alerta(mensaje)
+            messagebox.showinfo(f"{nombre} - Resultado", mensaje)
+        else:
+            messagebox.showerror(f"{nombre} - Sin Ruta", "No se encontró una ruta hacia la meta.")
     
     def procesar_eventos(self):
         for evento in pygame.event.get():
@@ -273,6 +289,18 @@ class InterfazGrid:
         if self.alert_msg and self.alert_timer > 0:
             self._dibujar_alerta(self.alert_msg)
         pygame.display.flip()
+
+    def _mostrar_alerta(self, texto, duracion=120):
+        """Configura un mensaje visible en pantalla durante unas iteraciones."""
+        self.alert_msg = texto
+        self.alert_timer = duracion
+
+    def _dibujar_alerta(self, texto):
+       
+        warning_rect = pygame.Rect(OFFSET_X, OFFSET_Y, 300, 30)
+        pygame.draw.rect(self.pantalla, (255, 220, 220), warning_rect)
+        texto_surf = self.fuente.render(texto, True, COLOR_TEXTO)
+        self.pantalla.blit(texto_surf, (warning_rect.x + 5, warning_rect.y + 5))
     
     def ejecutar(self):
         while self.ejecutando:

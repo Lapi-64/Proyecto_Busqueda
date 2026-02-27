@@ -18,18 +18,27 @@ def get_neighbors(gestor, nodo: Nodo):
 
 
 def reconstruct_path(came_from, current: Nodo):
+    """Marca el camino reconstruido y devuelve la longitud del mismo.
+
+    La longitud cuenta todas las celdas desde la meta hasta el inicio (ambas
+    incluidas)."""
+    length = 1
     while current in came_from:
         current = came_from[current]
+        length += 1
         if not current.es_inicio and not current.es_meta:
             current.en_camino = True
+    return length
 
 
-def a_star(gestor, delay=0.4, draw_func=None) -> bool:
-    
+def a_star(gestor, delay=0.4, draw_func=None):
+    """Ejecuta A* y devuelve una tupla (longitud, tiempo) o False."""
     start = gestor.inicio
     goal = gestor.meta
     if start is None or goal is None:
         return False
+
+    start_time = time.time()
 
     open_set = [] 
     counter = 0
@@ -45,8 +54,9 @@ def a_star(gestor, delay=0.4, draw_func=None) -> bool:
         open_set_map.discard(current)
 
         if current == goal:
-            reconstruct_path(came_from, current)
-            return True
+            length = reconstruct_path(came_from, current)
+            elapsed = time.time() - start_time
+            return length, elapsed
 
         if not current.es_inicio and not current.es_meta:
             current.visitado = True
