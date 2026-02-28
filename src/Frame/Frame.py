@@ -8,26 +8,14 @@ from Algoritmos_Busqueda.BFS import bfs
 from Algoritmos_Busqueda.DFS import dfs
 from Algoritmos_Busqueda.Dijkstra import dijkstra
 
-ANCHO_VENTANA = 1000
-ALTO_VENTANA = 700
-TAMAÑO_CELDA = 50
-CANTIDAD_COLUMNAS = (ANCHO_VENTANA - 200) // TAMAÑO_CELDA
-CANTIDAD_FILAS = ALTO_VENTANA // TAMAÑO_CELDA
-OFFSET_X = 10
-OFFSET_Y = 10
-
-COLOR_FONDO = (240, 240, 240)
-COLOR_LINEA = (200, 200, 200)
-COLOR_CELDA = (255, 255, 255)
-COLOR_POSIBLE = (0, 255, 0)
-COLOR_VISITADO = (255, 0, 0)
-COLOR_CAMINO = (255, 255, 0)
-COLOR_INICIO = (0, 0, 255)
-COLOR_META = (128, 0, 128)
-COLOR_OBSTACULO = (0, 0, 0)
-COLOR_TEXTO = (50, 50, 50)
-COLOR_BOTON = (200, 200, 200)
-COLOR_BOTON_SELECCION = (180, 180, 180)
+from Constantes import (
+    ANCHO_VENTANA, ALTO_VENTANA, TAMAÑO_CELDA, CANTIDAD_COLUMNAS, CANTIDAD_FILAS,
+    OFFSET_X, OFFSET_Y,
+    COLOR_FONDO, COLOR_LINEA, COLOR_CELDA, COLOR_POSIBLE, COLOR_VISITADO,
+    COLOR_CAMINO, COLOR_CAMINO_PANTANO, COLOR_CAMINO_DESIERTO, COLOR_INICIO,
+    COLOR_META, COLOR_OBSTACULO, COLOR_PANTANO, COLOR_DESIERTO, COLOR_TEXTO,
+    COLOR_BOTON, COLOR_BOTON_SELECCION,
+)
 
 
 class GestorGrid:
@@ -36,6 +24,10 @@ class GestorGrid:
         self.filas = filas
         self.tamaño_celda = tamaño_celda
         self.nodos = [[Nodo(x, y, tamaño_celda) for x in range(colum)] for y in range(filas)]
+
+        for fila in self.nodos:
+            for nodo in fila:
+                nodo.actualizar_vecinos(self)
         self.modo_actual = "normal"
         self.inicio = None
         self.meta = None
@@ -79,6 +71,24 @@ class GestorGrid:
         elif self.modo_actual == "obstaculo":
             if not nodo.es_inicio and not nodo.es_meta:
                 nodo.es_obstaculo = not nodo.es_obstaculo
+                
+        elif self.modo_actual == "pantano":
+            if not nodo.es_inicio and not nodo.es_meta:
+                nodo.es_pantano = not nodo.es_pantano
+                if nodo.es_pantano:
+                    nodo.peso = 5
+                    nodo.es_desierto = False 
+                else:
+                    nodo.peso = 1
+                    
+        elif self.modo_actual == "desierto":
+            if not nodo.es_inicio and not nodo.es_meta:
+                nodo.es_desierto = not nodo.es_desierto
+                if nodo.es_desierto:
+                    nodo.peso = 10
+                    nodo.es_pantano = False 
+                else:
+                    nodo.peso = 1
     
     def resetear(self):
         for fila in self.nodos:
@@ -95,6 +105,9 @@ class GestorGrid:
                 nodo.es_inicio = False
                 nodo.es_meta = False
                 nodo.es_obstaculo = False
+                nodo.es_pantano = False
+                nodo.es_desierto = False
+                nodo.peso = 1
                 nodo.en_camino = False
                 nodo.posible = False
 
@@ -145,36 +158,50 @@ class InterfazGrid:
             "activo": False
         }
         
-        botones["a_star"] = {
+        botones["pantano"] = {
             "rect": pygame.Rect(x_inicio, y_inicio + 3*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "texto": "Pantano (5)",
+            "accion": lambda: self.gestor.set_modo("pantano"),
+            "activo": False
+        }
+        
+        botones["desierto"] = {
+            "rect": pygame.Rect(x_inicio, y_inicio + 4*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "texto": "Desierto (10)",
+            "accion": lambda: self.gestor.set_modo("desierto"),
+            "activo": False
+        }
+        
+        botones["a_star"] = {
+            "rect": pygame.Rect(x_inicio, y_inicio + 5*(alto_boton + espaciado), ancho_boton, alto_boton),
             "texto": "A*",
             "accion": lambda: self.ejecutar_algoritmo("a_star"),
             "activo": False
         }
         
         botones["bfs"] = {
-            "rect": pygame.Rect(x_inicio, y_inicio + 4*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "rect": pygame.Rect(x_inicio, y_inicio + 6*(alto_boton + espaciado), ancho_boton, alto_boton),
             "texto": "BFS",
             "accion": lambda: self.ejecutar_algoritmo("bfs"),
             "activo": False
         }
         
         botones["dfs"] = {
-            "rect": pygame.Rect(x_inicio, y_inicio + 5*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "rect": pygame.Rect(x_inicio, y_inicio + 7*(alto_boton + espaciado), ancho_boton, alto_boton),
             "texto": "DFS",
             "accion": lambda: self.ejecutar_algoritmo("dfs"),
             "activo": False
         }
         
         botones["dijkstra"] = {
-            "rect": pygame.Rect(x_inicio, y_inicio + 6*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "rect": pygame.Rect(x_inicio, y_inicio + 8*(alto_boton + espaciado), ancho_boton, alto_boton),
             "texto": "Dijkstra",
             "accion": lambda: self.ejecutar_algoritmo("dijkstra"),
             "activo": False
         }
         
         botones["reiniciar"] = {
-            "rect": pygame.Rect(x_inicio, y_inicio + 7*(alto_boton + espaciado), ancho_boton, alto_boton),
+            "rect": pygame.Rect(x_inicio, y_inicio + 9*(alto_boton + espaciado), ancho_boton, alto_boton),
             "texto": "Reiniciar",
             "accion": lambda: self.gestor.reiniciar(),
             "activo": False
@@ -189,7 +216,6 @@ class InterfazGrid:
         
         self.gestor.resetear()
         
-        # resultado será False o (longitud, tiempo)
         resultado = False
         nombre = algoritmo.upper() if algoritmo != "a_star" else "A*"
 
@@ -247,7 +273,16 @@ class InterfazGrid:
                 elif nodo.es_obstaculo:
                     color = COLOR_OBSTACULO
                 elif nodo.en_camino:
-                    color = COLOR_CAMINO
+                    if nodo.es_desierto:
+                        color = COLOR_CAMINO_DESIERTO
+                    elif nodo.es_pantano:
+                        color = COLOR_CAMINO_PANTANO
+                    else:
+                        color = COLOR_CAMINO
+                elif nodo.es_pantano:
+                    color = COLOR_PANTANO
+                elif nodo.es_desierto:
+                    color = COLOR_DESIERTO
                 elif nodo.posible:
                     color = COLOR_POSIBLE
                 elif nodo.visitado:
@@ -260,7 +295,7 @@ class InterfazGrid:
     
     def dibujar_botones(self):
         for nombre, boton in self.botones.items():
-            if nombre in ["inicio", "meta", "obstaculo"] and nombre == self.gestor.modo_actual:
+            if nombre in ["inicio", "meta", "obstaculo", "pantano", "desierto"] and nombre == self.gestor.modo_actual:
                 color = COLOR_BOTON_SELECCION
             else:
                 color = COLOR_BOTON
@@ -291,7 +326,6 @@ class InterfazGrid:
         pygame.display.flip()
 
     def _mostrar_alerta(self, texto, duracion=120):
-        """Configura un mensaje visible en pantalla durante unas iteraciones."""
         self.alert_msg = texto
         self.alert_timer = duracion
 

@@ -9,8 +9,12 @@ class Nodo:
         self.es_inicio = False
         self.es_meta = False
         self.es_obstaculo = False
+        self.es_pantano = False
+        self.es_desierto = False
+        self.peso = 1
         self.en_camino = False
         self.posible = False
+        self.vecinos = []
         
     def __eq__(self, other):
         return isinstance(other, Nodo) and self.x == other.x and self.y == other.y
@@ -34,8 +38,27 @@ class Nodo:
         self.visitado = False
         self.en_camino = False
         self.posible = False
-        if not self.es_inicio and not self.es_meta and not self.es_obstaculo:
+        if not self.es_inicio and not self.es_meta and not self.es_obstaculo and not self.es_pantano and not self.es_desierto:
             pass
+
+    def agregar_vecino(self, nodo):
+        if nodo not in self.vecinos:
+            self.vecinos.append(nodo)
+
+    def remover_vecino(self, nodo):
+        if nodo in self.vecinos:
+            self.vecinos.remove(nodo)
+
+    def actualizar_vecinos(self, gestor):
+        self.vecinos = []
+        direcciones = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        for dx, dy in direcciones:
+            nx, ny = self.x + dx, self.y + dy
+            if 0 <= nx < gestor.cols and 0 <= ny < gestor.filas:
+                self.vecinos.append(gestor.nodos[ny][nx])
+
+    def get_vecinos(self):
+        return list(self.vecinos)
     
     def __repr__(self):
         return f"Nodo({self.x}, {self.y})"

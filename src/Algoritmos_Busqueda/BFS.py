@@ -1,18 +1,6 @@
 from collections import deque
 import time
 from Logica.Nodo import Nodo
-
-
-def get_neighbors(gestor, nodo: Nodo):
-    vecinos = []
-    direcciones = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    for dx, dy in direcciones:
-        nx, ny = nodo.x + dx, nodo.y + dy
-        if 0 <= nx < gestor.cols and 0 <= ny < gestor.filas:
-            vecinos.append(gestor.nodos[ny][nx])
-    return vecinos
-
-
 def reconstruct_path(came_from, current: Nodo):
 
     length = 1
@@ -59,7 +47,7 @@ def bfs(gestor, delay=0.4, draw_func=None):
             else:
                 time.sleep(delay)
 
-        for vecino in get_neighbors(gestor, current):
+        for vecino in current.get_vecinos():
             if vecino.es_obstaculo or vecino in visited:
                 continue
             
